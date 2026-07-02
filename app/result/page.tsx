@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { calculateSajuWithElements, type SajuWithElements, type Element } from '@/lib/utils';
 import { getInterpretation, type MBTI } from '@/lib/interpretations';
 import { generateFullInterpretation, type InterpretationComponents } from '@/lib/generate-interpretation';
@@ -22,7 +22,7 @@ const ELEMENT_KOREAN: Record<Element, string> = {
   수: '수(水)',
 };
 
-export default function ResultPage() {
+function ResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [saju, setSaju] = useState<SajuWithElements | null>(null);
@@ -284,5 +284,22 @@ export default function ResultPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center relative z-10">
+          <div className="text-center">
+            <div className="text-4xl mb-4 animate-pulse">🔮</div>
+            <p className="text-purple-300">신선의 말씀을 기다리는 중...</p>
+          </div>
+        </main>
+      }
+    >
+      <ResultContent />
+    </Suspense>
   );
 }
