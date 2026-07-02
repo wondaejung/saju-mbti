@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(node saju.js)",
+      "Bash(node -e ' *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

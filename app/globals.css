@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;700&display=swap');
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+  background: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 30%, #2d1b4e 60%, #1a1f3a 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: #f5f5f5;
+  position: relative;
+}
+
+/* 신비로운 안개 효과 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 80%, rgba(75, 0, 130, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 별 효과 */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s infinite;
+}
+
+/* 신비로운 빛 효과 */
+@keyframes mystical-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.3)); }
+  50% { filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6)); }
+}
