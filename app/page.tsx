@@ -1,10 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const MBTI_OPTIONS = ['ISTJ', 'ISFJ', 'INFJ', 'INTJ', 'ISTP', 'ISFP', 'INFP', 'INTP', 'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ', 'ESTP', 'ESFP', 'ENFP', 'ENTP'] as const;
+
+const PROFILE_STORAGE_KEY = 'saju-mbti-profile';
+
+type SavedProfile = {
+  name: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: string;
+  minute: string;
+  mbti: string;
+};
+
+function buildResultParams(profile: SavedProfile): string {
+  return new URLSearchParams({
+    name: profile.name,
+    year: String(profile.year),
+    month: String(profile.month),
+    day: String(profile.day),
+    hour: profile.hour,
+    minute: profile.minute,
+    mbti: profile.mbti,
+  }).toString();
+}
 
 export default function Home() {
   const router = useRouter();
@@ -19,6 +43,18 @@ export default function Home() {
     mbti: 'ISTJ',
   });
   const [error, setError] = useState('');
+  const [savedProfile, setSavedProfile] = useState<SavedProfile | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as SavedProfile;
+      if (parsed.name?.trim()) setSavedProfile(parsed);
+    } catch {
+      // localStorage 접근/파싱 실패 시 무시
+    }
+  }, []);
 
   // 드롭다운 선택지: 년도(최신순), 해당 월의 실제 일수만큼만 표시
   const currentYear = new Date().getFullYear();
@@ -53,17 +89,24 @@ export default function Home() {
       return;
     }
 
-    const params = new URLSearchParams({
-      name: formData.name,
-      year: String(formData.year),
-      month: String(formData.month),
-      day: String(formData.day),
+    const profile: SavedProfile = {
+      name: formData.name.trim(),
+      year: formData.year,
+      month: formData.month,
+      day: formData.day,
       hour: formData.unknown ? '' : formData.hour,
       minute: formData.unknown ? '0' : formData.minute,
       mbti: formData.mbti,
-    });
+    };
 
-    router.push(`/result?${params.toString()}`);
+    try {
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      setSavedProfile(profile);
+    } catch {
+      // 저장 실패해도 결과 페이지 이동은 계속
+    }
+
+    router.push(`/result?${buildResultParams(profile)}`);
   };
 
   return (
