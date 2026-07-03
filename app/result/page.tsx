@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { calculateSajuWithElements, type SajuWithElements, type Element } from '@/lib/utils';
 import { getInterpretation, type MBTI } from '@/lib/interpretations';
 import { generateFullInterpretation, type InterpretationComponents } from '@/lib/generate-interpretation';
+import { getFortune } from '@/lib/fortune';
 
 const ELEMENT_COLORS: Record<Element, string> = {
   목: '#BAE1BA',
@@ -28,6 +29,7 @@ function ResultContent() {
   const [saju, setSaju] = useState<SajuWithElements | null>(null);
   const [generatedInterpretation, setGeneratedInterpretation] = useState('');
   const [error, setError] = useState('');
+  const [fortuneTab, setFortuneTab] = useState<'daily' | 'weekly'>('daily');
 
   const name = searchParams.get('name') || '게스트';
   const year = parseInt(searchParams.get('year') || '2000');
@@ -79,6 +81,7 @@ function ResultContent() {
   }
 
   const interpretation = getInterpretation(saju.dominantElement, mbti);
+  const fortune = getFortune(year, month, day);
 
   return (
     <main className="min-h-screen px-4 py-8 relative z-10">
@@ -272,6 +275,119 @@ function ResultContent() {
             <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-purple-500/30 rounded-br-lg"></div>
           </div>
         )}
+
+        {/* 보너스 운세: 십이지신 띠 × 별자리 */}
+        <div className="bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-purple-900/60 backdrop-blur-md rounded-3xl p-6 shadow-lg mb-6 border border-purple-500/20">
+          <h2 className="text-xl font-bold text-purple-300 mb-1 flex items-center gap-2">
+            <span>🌙</span> 신선이 전하는 보너스 운세
+          </h2>
+          <p className="text-purple-400/70 text-sm mb-5 font-light">
+            {fortune.animal.emoji} {fortune.animal.name}띠 · {fortune.star.symbol} {fortune.star.name}의 기운을 함께 읽노라
+          </p>
+
+          {/* 일일/주간 탭 */}
+          <div className="flex gap-2 mb-5">
+            <button
+              onClick={() => setFortuneTab('daily')}
+              className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                fortuneTab === 'daily'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                  : 'bg-slate-900/50 text-purple-300/70 border border-purple-500/20 hover:border-purple-400/40'
+              }`}
+            >
+              ☀️ 오늘의 운세
+            </button>
+            <button
+              onClick={() => setFortuneTab('weekly')}
+              className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                fortuneTab === 'weekly'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                  : 'bg-slate-900/50 text-purple-300/70 border border-purple-500/20 hover:border-purple-400/40'
+              }`}
+            >
+              🌖 이레(주간)의 운세
+            </button>
+          </div>
+
+          {fortuneTab === 'daily' ? (
+            <div className="space-y-4">
+              {/* 총운 별점 */}
+              <div className="text-center">
+                <span className="text-purple-300 text-sm mr-2">오늘의 기운</span>
+                <span className="text-yellow-300 tracking-widest text-lg">
+                  {'✦'.repeat(fortune.daily.score)}
+                  <span className="text-purple-500/40">{'✧'.repeat(5 - fortune.daily.score)}</span>
+                </span>
+              </div>
+
+              {/* 띠 운세 */}
+              <div className="bg-slate-900/50 border border-purple-500/20 rounded-2xl p-4">
+                <h3 className="font-semibold text-purple-300 mb-2 flex items-center gap-2">
+                  <span className="text-xl">{fortune.animal.emoji}</span> 십이지신 {fortune.animal.name}띠 운세
+                </h3>
+                <p className="text-sm text-purple-100/80 leading-relaxed font-light">{fortune.daily.animalText}</p>
+              </div>
+
+              {/* 별자리 운세 */}
+              <div className="bg-slate-900/50 border border-blue-500/20 rounded-2xl p-4">
+                <h3 className="font-semibold text-blue-300 mb-2 flex items-center gap-2">
+                  <span className="text-xl">{fortune.star.symbol}</span> {fortune.star.name} 운세
+                </h3>
+                <p className="text-sm text-blue-100/80 leading-relaxed font-light">{fortune.daily.starText}</p>
+              </div>
+
+              {/* 행운 요소 */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/30 rounded-2xl p-3 text-center border border-purple-500/20">
+                  <div className="text-xs text-purple-400/70 mb-1">행운의 빛깔</div>
+                  <div className="text-sm font-bold text-purple-200">{fortune.daily.luckyColor}</div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/30 rounded-2xl p-3 text-center border border-purple-500/20">
+                  <div className="text-xs text-purple-400/70 mb-1">행운의 숫자</div>
+                  <div className="text-sm font-bold text-purple-200">{fortune.daily.luckyNumber}</div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/30 rounded-2xl p-3 text-center border border-purple-500/20">
+                  <div className="text-xs text-purple-400/70 mb-1">행운의 물건</div>
+                  <div className="text-sm font-bold text-purple-200">{fortune.daily.luckyItem}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* 주간 별점 + 화두 */}
+              <div className="text-center">
+                <span className="text-purple-300 text-sm mr-2">이레의 기운</span>
+                <span className="text-yellow-300 tracking-widest text-lg">
+                  {'✦'.repeat(fortune.weekly.score)}
+                  <span className="text-purple-500/40">{'✧'.repeat(5 - fortune.weekly.score)}</span>
+                </span>
+              </div>
+
+              <div className="text-center bg-gradient-to-r from-transparent via-purple-900/40 to-transparent rounded-xl py-3">
+                <span className="text-purple-400/70 text-xs">이번 이레의 화두</span>
+                <div className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+                  「 {fortune.weekly.keyword} 」
+                </div>
+              </div>
+
+              {/* 띠 주간 운세 */}
+              <div className="bg-slate-900/50 border border-purple-500/20 rounded-2xl p-4">
+                <h3 className="font-semibold text-purple-300 mb-2 flex items-center gap-2">
+                  <span className="text-xl">{fortune.animal.emoji}</span> 십이지신 {fortune.animal.name}띠 주간 운세
+                </h3>
+                <p className="text-sm text-purple-100/80 leading-relaxed font-light">{fortune.weekly.animalText}</p>
+              </div>
+
+              {/* 별자리 주간 운세 */}
+              <div className="bg-slate-900/50 border border-blue-500/20 rounded-2xl p-4">
+                <h3 className="font-semibold text-blue-300 mb-2 flex items-center gap-2">
+                  <span className="text-xl">{fortune.star.symbol}</span> {fortune.star.name} 주간 운세
+                </h3>
+                <p className="text-sm text-blue-100/80 leading-relaxed font-light">{fortune.weekly.starText}</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 하단 네비게이션 */}
         <div className="text-center mb-8">

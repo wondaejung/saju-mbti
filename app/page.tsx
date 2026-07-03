@@ -9,7 +9,7 @@ export default function Home() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    year: new Date().getFullYear(),
+    year: 2000,
     month: 1,
     day: 1,
     hour: '',
@@ -18,6 +18,20 @@ export default function Home() {
     mbti: 'ISTJ',
   });
   const [error, setError] = useState('');
+
+  // 드롭다운 선택지: 년도(최신순), 해당 월의 실제 일수만큼만 표시
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1900 + 1 }, (_, i) => currentYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const daysInMonth = new Date(formData.year, formData.month, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // 년/월이 바뀌면 일이 범위를 넘지 않도록 자동 보정 (예: 1월 31일 → 2월 선택 시 28일로)
+  const updateDate = (patch: Partial<{ year: number; month: number; day: number }>) => {
+    const next = { ...formData, ...patch };
+    const maxDay = new Date(next.year, next.month, 0).getDate();
+    setFormData({ ...next, day: Math.min(next.day, maxDay) });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,37 +92,43 @@ export default function Home() {
               />
             </div>
 
-            {/* 생년월일 */}
+            {/* 생년월일 - 드롭다운으로 편하게 선택 */}
             <div className="mb-5">
               <label className="block text-sm font-semibold text-purple-300 mb-2">당신의 천지명(생년월일)</label>
               <div className="grid grid-cols-3 gap-2">
-                <input
-                  type="number"
-                  min="1900"
-                  max="2099"
+                <select
                   value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                  className="px-3 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center placeholder-purple-500/50"
-                  placeholder="년"
-                />
-                <input
-                  type="number"
-                  min="1"
-                  max="12"
+                  onChange={(e) => updateDate({ year: parseInt(e.target.value) })}
+                  className="px-2 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center cursor-pointer"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
+                </select>
+                <select
                   value={formData.month}
-                  onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
-                  className="px-3 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center placeholder-purple-500/50"
-                  placeholder="월"
-                />
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
+                  onChange={(e) => updateDate({ month: parseInt(e.target.value) })}
+                  className="px-2 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center cursor-pointer"
+                >
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+                <select
                   value={formData.day}
-                  onChange={(e) => setFormData({ ...formData, day: parseInt(e.target.value) })}
-                  className="px-3 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center placeholder-purple-500/50"
-                  placeholder="일"
-                />
+                  onChange={(e) => updateDate({ day: parseInt(e.target.value) })}
+                  className="px-2 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center cursor-pointer"
+                >
+                  {days.map((d) => (
+                    <option key={d} value={d}>
+                      {d}일
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -140,6 +160,7 @@ export default function Home() {
                     max="23"
                     value={formData.hour}
                     onChange={(e) => setFormData({ ...formData, hour: e.target.value })}
+                    onFocus={(e) => e.target.select()}
                     placeholder="시간 (0~23)"
                     className="px-3 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center placeholder-purple-500/50"
                   />
@@ -149,6 +170,7 @@ export default function Home() {
                     max="59"
                     value={formData.minute}
                     onChange={(e) => setFormData({ ...formData, minute: e.target.value })}
+                    onFocus={(e) => e.target.select()}
                     placeholder="분 (0~59)"
                     className="px-3 py-3 rounded-2xl border-2 border-purple-500/30 bg-slate-900/50 text-purple-100 focus:outline-none focus:border-purple-400 transition text-center placeholder-purple-500/50"
                   />
