@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const MBTI_OPTIONS = ['ISTJ', 'ISFJ', 'INFJ', 'INTJ', 'ISTP', 'ISFP', 'INFP', 'INTP', 'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ', 'ESTP', 'ESFP', 'ENFP', 'ENTP'] as const;
 
@@ -76,6 +77,20 @@ export default function Home() {
           </h1>
           <p className="text-purple-300/70 font-light">당신의 천명을 찾아오신 분이군요...</p>
         </div>
+
+        {/* 재방문자: 오늘의 운세 바로가기 */}
+        {savedProfile && (
+          <button
+            onClick={() => router.push(`/result?${buildResultParams(savedProfile)}`)}
+            className="w-full mb-5 py-4 px-5 rounded-2xl bg-gradient-to-r from-yellow-900/40 via-purple-900/60 to-yellow-900/40 border border-yellow-500/30 hover:border-yellow-400/60 transition text-left flex items-center gap-3 group"
+          >
+            <span className="text-3xl group-hover:scale-110 transition-transform">🔮</span>
+            <span>
+              <span className="block text-yellow-200 font-bold">{savedProfile.name}님, 오늘의 운세가 도착했노라</span>
+              <span className="block text-purple-300/70 text-xs mt-0.5">눌러서 바로 확인하기 →</span>
+            </span>
+          </button>
+        )}
 
         {/* 폼 - 신비로운 스타일 */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -206,6 +221,14 @@ export default function Home() {
             </button>
           </div>
         </form>
+
+        {/* 궁합 보기 링크 */}
+        <Link
+          href="/compatibility"
+          className="block mt-5 py-3 rounded-2xl text-center font-bold text-pink-200 bg-gradient-to-r from-pink-900/40 to-purple-900/40 border border-pink-500/30 hover:border-pink-400/60 transition"
+        >
+          💕 인연의 궁합 보기
+        </Link>
 
         {/* 하단 설명 */}
         <div className="mt-6 text-center text-sm text-purple-300/70 font-light">

@@ -1,5 +1,5 @@
 import type { Tiangan, Sipseong, Wangsang } from './saju-analysis';
-import { YILGAN_DESCRIPTIONS, ELEMENT_WANGSANG, SIPSEONG_DESCRIPTIONS, MBTI_SIPSEONG_SYNERGY, getRandomConnector } from './interpretation-layers';
+import { YILGAN_DESCRIPTIONS, ELEMENT_WANGSANG, SIPSEONG_DESCRIPTIONS, MBTI_SIPSEONG_SYNERGY } from './interpretation-layers';
 import type { MBTI } from './interpretations';
 
 export interface InterpretationComponents {
@@ -8,16 +8,14 @@ export interface InterpretationComponents {
   mainWangsang: Wangsang;
   mainSipseong: Sipseong;
   mbti: MBTI;
-  month: number;
 }
 
-function getMBTIAxes(mbti: MBTI): Record<string, string> {
-  const axes: Record<string, string> = {};
-  axes['EI'] = mbti[0] === 'E' ? 'E' : 'I';
-  axes['SN'] = mbti[1] === 'S' ? 'S' : 'N';
-  axes['TF'] = mbti[2] === 'T' ? 'T' : 'F';
-  axes['JP'] = mbti[3] === 'J' ? 'J' : 'P';
-  return axes;
+function getMBTIAxes(mbti: MBTI): { EI: string; TF: string; JP: string } {
+  return {
+    EI: mbti[0],
+    TF: mbti[2],
+    JP: mbti[3],
+  };
 }
 
 function getSipseongCategory(sipseong: Sipseong): string {
@@ -25,24 +23,20 @@ function getSipseongCategory(sipseong: Sipseong): string {
   if (sipseong === '식신' || sipseong === '상관') return '식상';
   if (sipseong === '편재' || sipseong === '정재') return '재성';
   if (sipseong === '편관' || sipseong === '관성') return '관살';
-  if (sipseong === '편인' || sipseong === '인성') return '인성';
-  return '비겁';
+  return '인성';
 }
 
 function findSynergyKey(mbtiAxis: string, sipseongCategory: string): string {
   const keys = Object.keys(MBTI_SIPSEONG_SYNERGY);
-  const possibleKeys = keys.filter((k) => k.includes(mbtiAxis) && k.includes(sipseongCategory));
 
-  if (possibleKeys.length > 0) {
-    return possibleKeys[0];
-  }
+  const exact = keys.find((k) => k.includes(mbtiAxis) && k.includes(sipseongCategory));
+  if (exact) return exact;
 
-  // 두 자리 축 (E/I, S/N, T/F, J/P)별로 시너지 찾기
+  // 정확한 조합이 없으면 같은 축의 시너지 중 하나를 선택
   const axisKeys = keys.filter((k) => k.startsWith(mbtiAxis));
   if (axisKeys.length > 0) {
     return axisKeys[Math.floor(Math.random() * axisKeys.length)];
   }
-
   return '';
 }
 
@@ -70,16 +64,15 @@ const MYSTICAL_CLOSINGS = [
   '이 진리가 당신의 마음에 스며들기를 바라노라.',
 ];
 
-function getRandomMysticalOpening(): string {
-  return MYSTICAL_OPENINGS[Math.floor(Math.random() * MYSTICAL_OPENINGS.length)];
+function pickRandom(arr: string[]): string {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function getRandomMysticalTransition(): string {
-  return MYSTICAL_TRANSITIONS[Math.floor(Math.random() * MYSTICAL_TRANSITIONS.length)];
-}
-
-function getRandomMysticalClosing(): string {
-  return MYSTICAL_CLOSINGS[Math.floor(Math.random() * MYSTICAL_CLOSINGS.length)];
+/** 배열을 섞은 뒤 순서대로 꺼내는 함수를 반환 (같은 전환구가 연속 반복되지 않도록) */
+function createShuffledPicker(arr: string[]): () => string {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  let index = 0;
+  return () => shuffled[index++ % shuffled.length];
 }
 
 // 존댓말(~요체)을 신선의 고어체로 변환하는 규칙들
@@ -94,9 +87,7 @@ const MYSTICAL_RULES: [RegExp, string][] = [
   [/하세요/g, '할지어다'],
   [/보세요/g, '볼지어다'],
   [/마세요/g, '말지어다'],
-  [/조심하세요/g, '조심할지어다'],
   [/세요/g, '할지어다'],
-  [/알아둬요/g, '알아둘지어다'],
   [/둬요/g, '둘지어다'],
   [/줘요/g, '줄지어다'],
   // 자주 나오는 서술형 (구체적인 것부터)
@@ -139,84 +130,48 @@ function toMysticalTone(text: string): string {
   return result;
 }
 
-export function generateFullInterpretation(components: InterpretationComponents): string {
-  const { yilgan, mainElement, mainWangsang, mainSipseong, mbti, month } = components;
+/**
+ * 4개 레이어(일간 → 오행 강약 → 십성 → MBTI 시너지)를 조합해
+ * 신선의 말투로 된 해설 문단 배열을 생성한다. (API 호출 없음)
+ * 배열의 첫 요소는 오프닝, 마지막 요소는 클로징 문구.
+ */
+export function generateFullInterpretation(components: InterpretationComponents): string[] {
+  const { yilgan, mainElement, mainWangsang, mainSipseong, mbti } = components;
+  const nextTransition = createShuffledPicker(MYSTICAL_TRANSITIONS);
 
-  const parts: string[] = [];
-
-  // 신비로운 오프닝
-  parts.push(getRandomMysticalOpening());
+  const paragraphs: string[] = [pickRandom(MYSTICAL_OPENINGS)];
 
   // 레이어 ①: 일간 기본 성향
-  let yilganDesc = YILGAN_DESCRIPTIONS[yilgan];
+  const yilganDesc = YILGAN_DESCRIPTIONS[yilgan];
   if (yilganDesc) {
-    yilganDesc = toMysticalTone(yilganDesc);
-    parts.push(yilganDesc);
+    paragraphs.push(toMysticalTone(yilganDesc));
   }
 
   // 레이어 ②: 오행 강약 보완
-  let elementWangsangDesc = ELEMENT_WANGSANG[mainElement]?.[mainWangsang];
-  if (elementWangsangDesc) {
-    elementWangsangDesc = toMysticalTone(elementWangsangDesc);
-    parts.push(`${getRandomMysticalTransition()} ${elementWangsangDesc}`);
+  const elementDesc = ELEMENT_WANGSANG[mainElement]?.[mainWangsang];
+  if (elementDesc) {
+    paragraphs.push(`${nextTransition()} ${toMysticalTone(elementDesc)}`);
   }
 
   // 레이어 ③: 십성 우세 성향
-  let sipseongDesc = SIPSEONG_DESCRIPTIONS[mainSipseong];
-  if (sipseongDesc) {
-    sipseongDesc = toMysticalTone(sipseongDesc);
-    parts.push(`${getRandomMysticalTransition()} ${sipseongDesc}`);
-  }
-
-  // 레이어 ④: MBTI 4축 x 십성/오행 시너지
-  const mbtiAxes = getMBTIAxes(mbti);
-  const sipseongCategory = getSipseongCategory(mainSipseong);
-
-  // EI 축 시너지 찾기
-  let synergyKey = findSynergyKey(mbtiAxes['EI'], sipseongCategory);
-  if (synergyKey && MBTI_SIPSEONG_SYNERGY[synergyKey]) {
-    let synergy = toMysticalTone(MBTI_SIPSEONG_SYNERGY[synergyKey]);
-    parts.push(`${getRandomMysticalTransition()} ${synergy}`);
-  }
-
-  // TF 축 시너지 찾기
-  synergyKey = findSynergyKey(mbtiAxes['TF'], sipseongCategory);
-  if (synergyKey && MBTI_SIPSEONG_SYNERGY[synergyKey]) {
-    let synergy = toMysticalTone(MBTI_SIPSEONG_SYNERGY[synergyKey]);
-    parts.push(`${getRandomMysticalTransition()} ${synergy}`);
-  }
-
-  // JP 축 시너지 찾기 (마지막 문장)
-  synergyKey = findSynergyKey(mbtiAxes['JP'], mainElement);
-  if (synergyKey && MBTI_SIPSEONG_SYNERGY[synergyKey]) {
-    let synergy = toMysticalTone(MBTI_SIPSEONG_SYNERGY[synergyKey]);
-    parts.push(`${getRandomMysticalTransition()} ${synergy}`);
-  }
-
-  // 신비로운 결말
-  parts.push(`${getRandomMysticalClosing()} ✨`);
-
-  return parts.join(' ');
-}
-
-export function generateCompactInterpretation(components: InterpretationComponents): string {
-  const { yilgan, mainElement, mainWangsang, mainSipseong, mbti } = components;
-
-  const yilganDesc = YILGAN_DESCRIPTIONS[yilgan];
-  const elementWangsangDesc = ELEMENT_WANGSANG[mainElement]?.[mainWangsang];
   const sipseongDesc = SIPSEONG_DESCRIPTIONS[mainSipseong];
-
-  let result = yilganDesc || '';
-
-  if (elementWangsangDesc) {
-    result += ` ${getRandomConnector()} ${elementWangsangDesc}`;
-  }
-
   if (sipseongDesc) {
-    result += ` ${getRandomConnector()} ${sipseongDesc}`;
+    paragraphs.push(`${nextTransition()} ${toMysticalTone(sipseongDesc)}`);
   }
 
-  result += ` ${getRandomConnector()} 당신의 ${mainElement}과 ${mbti}가 만나 독특한 개성을 가진 사람이 되었어요! 🌟`;
+  // 레이어 ④: MBTI 축별 시너지 (E/I, T/F, J/P)
+  const axes = getMBTIAxes(mbti);
+  const category = getSipseongCategory(mainSipseong);
 
-  return result;
+  for (const axis of [axes.EI, axes.TF, axes.JP]) {
+    const key = findSynergyKey(axis, category);
+    const synergy = key && MBTI_SIPSEONG_SYNERGY[key];
+    if (synergy) {
+      paragraphs.push(`${nextTransition()} ${toMysticalTone(synergy)}`);
+    }
+  }
+
+  paragraphs.push(pickRandom(MYSTICAL_CLOSINGS));
+
+  return paragraphs;
 }

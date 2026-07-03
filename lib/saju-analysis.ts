@@ -1,5 +1,3 @@
-import { getPillarByHangul } from '@fullstackfamily/manseryeok';
-
 export type Tiangan = '갑' | '을' | '병' | '정' | '무' | '기' | '경' | '신' | '임' | '계';
 export type Sipseong = '비견' | '겁재' | '식신' | '상관' | '편재' | '정재' | '편관' | '관성' | '편인' | '인성';
 export type Wangsang = '왕' | '상' | '휴' | '수' | '사';
@@ -28,17 +26,10 @@ function extractCharacter(pillarStr: string): string {
   return pillarStr.charAt(0);
 }
 
-export function extractYilgan(gapjaOrPillars: any): Tiangan {
-  let dayPillar = '';
-
-  if (gapjaOrPillars.dayPillar) {
-    dayPillar = gapjaOrPillars.dayPillar;
-  } else if (gapjaOrPillars.day) {
-    dayPillar = gapjaOrPillars.day;
-  }
-
+/** 일주(예: '을유')의 첫 글자에서 일간을 추출한다 */
+export function extractYilgan(dayPillar: string): Tiangan {
   const dayChar = extractCharacter(dayPillar);
-  return (TIANGAN_MAP[dayChar]?.name || '갑') as Tiangan;
+  return TIANGAN_MAP[dayChar]?.name ?? '갑';
 }
 
 export function calculateSipseong(yilgan: Tiangan, other: string): Sipseong {
@@ -92,48 +83,24 @@ export function calculateSipseong(yilgan: Tiangan, other: string): Sipseong {
   return '비견';
 }
 
-export function getMainSipseong(yilgan: Tiangan, gapjaOrPillars: any): Sipseong {
-  const pillarStrings: string[] = [];
+/** 일간 기준으로 년/월/시주 중 가장 많이 나타나는 십성을 구한다 */
+export function getMainSipseong(yilgan: Tiangan, pillars: (string | null)[]): Sipseong {
+  const counts = new Map<Sipseong, number>();
 
-  if (gapjaOrPillars.yearPillar) {
-    pillarStrings.push(gapjaOrPillars.yearPillar);
-    pillarStrings.push(gapjaOrPillars.monthPillar);
-    if (gapjaOrPillars.hourPillar) {
-      pillarStrings.push(gapjaOrPillars.hourPillar);
-    }
-  } else {
-    const parts = [gapjaOrPillars.year, gapjaOrPillars.month, gapjaOrPillars.hour];
-    pillarStrings.push(...parts.filter((p): p is string => p !== null && p.length > 0));
+  for (const pillar of pillars) {
+    if (!pillar) continue;
+    const s = calculateSipseong(yilgan, pillar);
+    counts.set(s, (counts.get(s) ?? 0) + 1);
   }
-
-  const sipseongs = pillarStrings.map((p) => calculateSipseong(yilgan, p));
-  const sipseongCounts: Record<Sipseong, number> = {
-    비견: 0,
-    겁재: 0,
-    식신: 0,
-    상관: 0,
-    편재: 0,
-    정재: 0,
-    편관: 0,
-    관성: 0,
-    편인: 0,
-    인성: 0,
-  };
-
-  sipseongs.forEach((s) => {
-    sipseongCounts[s]++;
-  });
 
   let maxSipseong: Sipseong = '비견';
   let maxCount = 0;
-
-  for (const [s, count] of Object.entries(sipseongCounts)) {
+  for (const [s, count] of counts) {
     if (count > maxCount) {
       maxCount = count;
-      maxSipseong = s as Sipseong;
+      maxSipseong = s;
     }
   }
-
   return maxSipseong;
 }
 
@@ -184,10 +151,8 @@ export function calculateWangsangStatus(
   return '휴';
 }
 
-export function getWangsangForElements(
-  elementCounts: Record<string, number>,
-  month: number
-): Record<string, Wangsang> {
+/** 출생 월 기준으로 다섯 오행 각각의 왕상휴수사 상태를 구한다 */
+export function getWangsangForElements(month: number): Record<string, Wangsang> {
   const result: Record<string, Wangsang> = {};
   ['목', '화', '토', '금', '수'].forEach((el) => {
     result[el] = calculateWangsangStatus(el, month);

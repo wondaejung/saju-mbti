@@ -1,5 +1,5 @@
-import { calculateSaju, getPillarByHangul, type SajuResult } from '@fullstackfamily/manseryeok';
-import { extractYilgan, getMainSipseong, getWangsangForElements, type Tiangan, type Sipseong } from './saju-analysis';
+import { calculateSaju, getPillarByHangul } from '@fullstackfamily/manseryeok';
+import { extractYilgan, getMainSipseong, getWangsangForElements, type Tiangan, type Sipseong, type Wangsang } from './saju-analysis';
 
 export type Element = '목' | '화' | '토' | '금' | '수';
 
@@ -34,7 +34,7 @@ export interface SajuData {
 export interface SajuWithElements extends SajuData, ElementDistribution {
   yilgan: Tiangan;
   mainSipseong: Sipseong;
-  wangsangStatus: Record<Element, string>;
+  wangsangStatus: Record<Element, Wangsang>;
 }
 
 export function calculateSajuWithElements(
@@ -68,23 +68,10 @@ export function calculateSajuWithElements(
 
   const dominantElement = ELEMENTS.reduce((max, el) => (elementCounts[el] > elementCounts[max] ? el : max), ELEMENTS[0]);
 
-  // 새로운 분석 계산
-  const yilgan = extractYilgan({
-    dayPillar: saju.dayPillar,
-  });
-  const mainSipseong = getMainSipseong(yilgan, {
-    yearPillar: saju.yearPillar,
-    monthPillar: saju.monthPillar,
-    hourPillar: saju.hourPillar,
-  });
-  const wangsangResult = getWangsangForElements(elementCounts, month);
-  const wangsangStatus: Record<Element, string> = {
-    목: wangsangResult['목'] || '휴',
-    화: wangsangResult['화'] || '휴',
-    토: wangsangResult['토'] || '휴',
-    금: wangsangResult['금'] || '휴',
-    수: wangsangResult['수'] || '휴',
-  };
+  // 일간 / 주요 십성 / 오행별 왕상휴수사 분석
+  const yilgan = extractYilgan(saju.dayPillar);
+  const mainSipseong = getMainSipseong(yilgan, [saju.yearPillar, saju.monthPillar, saju.hourPillar]);
+  const wangsangStatus = getWangsangForElements(month) as Record<Element, Wangsang>;
 
   return {
     pillars: {

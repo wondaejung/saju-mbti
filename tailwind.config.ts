@@ -7,22 +7,8 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        pastel: {
-          pink: '#FFB3D9',
-          peach: '#FFCB9A',
-          yellow: '#FFFFBA',
-          green: '#BAE1BA',
-          blue: '#BAC7FF',
-          purple: '#E1BAFF',
-          lavender: '#D4C5F9',
-        },
-      },
       fontFamily: {
         cute: ['Noto Sans KR', 'system-ui', 'sans-serif'],
-      },
-      borderRadius: {
-        '3xl': '24px',
       },
     },
   },

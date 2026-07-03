@@ -6,6 +6,7 @@ import { calculateSajuWithElements, type SajuWithElements, type Element } from '
 import { getInterpretation, type MBTI } from '@/lib/interpretations';
 import { generateFullInterpretation, type InterpretationComponents } from '@/lib/generate-interpretation';
 import { getFortune } from '@/lib/fortune';
+import { getDailyTalisman } from '@/lib/talisman';
 
 const ELEMENT_COLORS: Record<Element, string> = {
   목: '#BAE1BA',
@@ -27,9 +28,30 @@ function ResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [saju, setSaju] = useState<SajuWithElements | null>(null);
-  const [generatedInterpretation, setGeneratedInterpretation] = useState('');
+  const [interpretationParts, setInterpretationParts] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [fortuneTab, setFortuneTab] = useState<'daily' | 'weekly'>('daily');
+  const [shareMessage, setShareMessage] = useState('');
+  const [talismanFlipped, setTalismanFlipped] = useState(false);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: '신선의 산방 🧙',
+          text: `신선이 풀어준 나의 천명 이야기 — 함께 보시게나`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareMessage('인연의 고리(링크)가 복사되었노라 ✨');
+        setTimeout(() => setShareMessage(''), 2500);
+      }
+    } catch {
+      // 사용자가 공유 창을 닫은 경우 등은 조용히 무시
+    }
+  };
 
   const name = searchParams.get('name') || '게스트';
   const year = parseInt(searchParams.get('year') || '2000');
@@ -44,17 +66,15 @@ function ResultContent() {
       const result = calculateSajuWithElements(year, month, day, hour, minute);
       setSaju(result);
 
-      // 새로운 해석 생성
+      // 신선의 말씀 생성 (문단 배열)
       const components: InterpretationComponents = {
         yilgan: result.yilgan,
         mainElement: result.dominantElement,
-        mainWangsang: result.wangsangStatus[result.dominantElement as Element] as any,
+        mainWangsang: result.wangsangStatus[result.dominantElement],
         mainSipseong: result.mainSipseong,
         mbti,
-        month,
       };
-      const interpretation = generateFullInterpretation(components);
-      setGeneratedInterpretation(interpretation);
+      setInterpretationParts(generateFullInterpretation(components));
     } catch (err) {
       setError('사주 계산 중 오류가 발생했습니다. 날짜를 다시 확인해주세요.');
       console.error(err);
@@ -82,6 +102,7 @@ function ResultContent() {
 
   const interpretation = getInterpretation(saju.dominantElement, mbti);
   const fortune = getFortune(year, month, day);
+  const talisman = getDailyTalisman(year, month, day);
 
   return (
     <main className="min-h-screen px-4 py-8 relative z-10">
@@ -94,11 +115,11 @@ function ResultContent() {
           >
             ← 산 아래로 돌아가기
           </button>
-          <div className="relative mb-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+          <div className="mb-2">
+            <div className="text-2xl mb-1">✨</div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
               {name}님의 천명
             </h1>
-            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-2xl">✨</div>
           </div>
           <p className="text-purple-300/70 text-sm font-light">
             {year}년 {month}월 {day}일 {hour !== undefined ? `${hour}시 ${minute}분` : '시간 미설정'}의 기운
@@ -110,7 +131,7 @@ function ResultContent() {
           <h2 className="text-xl font-bold text-purple-300 mb-4 flex items-center gap-2">
             <span>📿</span> 천지인 삼재
           </h2>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3">
             {['년', '월', '일', '시'].map((label, idx) => {
               const key = ['year', 'month', 'day', 'hour'][idx] as 'year' | 'month' | 'day' | 'hour';
               const pillar = saju.pillars[key];
@@ -119,11 +140,11 @@ function ResultContent() {
               return (
                 <div
                   key={label}
-                  className="bg-gradient-to-br from-purple-900/50 to-blue-900/30 rounded-2xl p-4 text-center border border-purple-500/30 hover:border-purple-400/60 transition-colors"
+                  className="bg-gradient-to-br from-purple-900/50 to-blue-900/30 rounded-2xl p-2 sm:p-4 text-center border border-purple-500/30 hover:border-purple-400/60 transition-colors"
                 >
                   <div className="text-xs text-purple-300 font-semibold mb-1">{label}주</div>
-                  <div className="text-lg font-bold text-purple-100">{pillar || '-'}</div>
-                  <div className="text-sm text-purple-400/80">{pillarHanja || '-'}</div>
+                  <div className="text-base sm:text-lg font-bold text-purple-100">{pillar || '-'}</div>
+                  <div className="text-xs sm:text-sm text-purple-400/80">{pillarHanja || '-'}</div>
                 </div>
               );
             })}
@@ -189,13 +210,13 @@ function ResultContent() {
             <span>🔮</span> 영혼의 본질
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-blue-900/70 to-blue-900/40 rounded-2xl p-6 text-center border border-blue-500/30 hover:border-blue-400/60 transition-colors">
+            <div className="bg-gradient-to-br from-blue-900/70 to-blue-900/40 rounded-2xl p-4 sm:p-6 text-center border border-blue-500/30 hover:border-blue-400/60 transition-colors">
               <div className="text-xs text-blue-300 font-semibold mb-2">성격의 빛</div>
-              <div className="text-4xl font-bold text-blue-200">{mbti}</div>
+              <div className="text-2xl sm:text-4xl font-bold text-blue-200">{mbti}</div>
             </div>
-            <div className="bg-gradient-to-br from-purple-900/70 to-purple-900/40 rounded-2xl p-6 text-center border border-purple-500/30 hover:border-purple-400/60 transition-colors">
+            <div className="bg-gradient-to-br from-purple-900/70 to-purple-900/40 rounded-2xl p-4 sm:p-6 text-center border border-purple-500/30 hover:border-purple-400/60 transition-colors">
               <div className="text-xs text-purple-300 font-semibold mb-2">오행의 근원</div>
-              <div className="text-4xl font-bold text-purple-200">{ELEMENT_KOREAN[saju.dominantElement]}</div>
+              <div className="text-2xl sm:text-4xl font-bold text-purple-200">{ELEMENT_KOREAN[saju.dominantElement]}</div>
             </div>
           </div>
         </div>
@@ -206,7 +227,7 @@ function ResultContent() {
             <h2 className="text-2xl font-bold text-purple-300 mb-2">{interpretation.title}</h2>
             <div className="mb-4 text-purple-100/80 leading-relaxed">{interpretation.description}</div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <h3 className="font-semibold text-purple-300 mb-2">✨ 당신의 강점</h3>
                 <ul className="space-y-1">
@@ -237,17 +258,17 @@ function ResultContent() {
         )}
 
         {/* 종합 해석 (생성형) - 신비로운 신선의 목소리 */}
-        {generatedInterpretation && (
-          <div className="relative mb-6 group">
+        {interpretationParts.length > 0 && (
+          <div className="relative mb-6">
             {/* 신비로운 배경 글로우 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 via-blue-900/20 to-purple-900/30 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 via-blue-900/20 to-purple-900/30 rounded-3xl blur-xl"></div>
 
             {/* 메인 카드 */}
-            <div className="relative bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-purple-900/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
+            <div className="relative bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-purple-900/80 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-2xl border border-purple-500/20">
               {/* 신선 이모지와 제목 */}
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-4xl animate-bounce" style={{animationDuration: '3s'}}>🧙</span>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-3xl sm:text-4xl">🧙</span>
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
                   신선의 말씀
                 </h2>
               </div>
@@ -255,24 +276,35 @@ function ResultContent() {
               {/* 구분선 */}
               <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent mb-6"></div>
 
-              {/* 신비로운 텍스트 */}
-              <p className="text-gray-100 leading-relaxed text-lg font-light italic text-center">
-                <span className="text-purple-300">"</span>
-                {generatedInterpretation}
-                <span className="text-purple-300">"</span>
+              {/* 오프닝: 나지막한 읊조림 */}
+              <p className="text-purple-300/90 italic text-center text-sm sm:text-base mb-6">
+                {interpretationParts[0]}
+              </p>
+
+              {/* 본문: 문단별로 나눠 읽기 편하게 */}
+              <div className="space-y-5">
+                {interpretationParts.slice(1, -1).map((paragraph, i) => (
+                  <p
+                    key={i}
+                    className="text-purple-50/95 leading-8 text-[15px] sm:text-base border-l-2 border-purple-500/40 pl-4"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              {/* 클로징: 마무리 읊조림 */}
+              <p className="text-purple-300/90 italic text-center text-sm sm:text-base mt-6">
+                {interpretationParts[interpretationParts.length - 1]} ✨
               </p>
 
               {/* 하단 장식 */}
-              <div className="flex justify-center gap-2 mt-6 text-purple-400/60">
+              <div className="flex justify-center gap-2 mt-5 text-purple-400/60">
                 <span>✦</span>
                 <span>✧</span>
                 <span>✦</span>
               </div>
             </div>
-
-            {/* 코너 장식 */}
-            <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-purple-500/30 rounded-tl-lg"></div>
-            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-purple-500/30 rounded-br-lg"></div>
           </div>
         )}
 
@@ -389,14 +421,56 @@ function ResultContent() {
           )}
         </div>
 
-        {/* 하단 네비게이션 */}
-        <div className="text-center mb-8">
-          <button
-            onClick={() => router.push('/')}
-            className="px-8 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition shadow-lg hover:shadow-purple-500/50"
+        {/* 오늘의 부적 뽑기 */}
+        <div className="bg-gradient-to-br from-slate-900/60 via-blue-900/40 to-purple-900/60 backdrop-blur-md rounded-3xl p-6 shadow-lg mb-6 border border-purple-500/20 text-center">
+          <h2 className="text-xl font-bold text-purple-300 mb-1 flex items-center justify-center gap-2">
+            <span>🎴</span> 신선의 부적 뽑기
+          </h2>
+          <p className="text-purple-400/70 text-sm mb-6 font-light">하루에 한 장, 오늘 당신을 지켜줄 부적이니라</p>
+
+          <div
+            className={`flip-card mx-auto w-44 h-60 sm:w-48 sm:h-64 ${talismanFlipped ? 'flipped' : 'cursor-pointer'}`}
+            onClick={() => setTalismanFlipped(true)}
           >
-            다른 영혼의 운명을 살피다
+            <div className="flip-card-inner">
+              {/* 앞면 (뒷장) */}
+              <div className="flip-card-front rounded-2xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/80 to-slate-900/90 flex flex-col items-center justify-center gap-3 hover:border-purple-400/70 transition-colors">
+                <span className="text-6xl">🎴</span>
+                <span className="text-purple-300 text-sm font-semibold animate-pulse">눌러서 부적 뽑기</span>
+              </div>
+              {/* 뒷면 (부적) */}
+              <div className="flip-card-back rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-900/30 via-purple-900/70 to-slate-900/90 flex flex-col items-center justify-center gap-3 p-4">
+                <span className="text-6xl">{talisman.emoji}</span>
+                <span className="text-yellow-200 font-bold text-lg">{talisman.name}</span>
+                <span className="text-yellow-500/60 text-xs">✦ 오늘의 부적 ✦</span>
+              </div>
+            </div>
+          </div>
+
+          {talismanFlipped && (
+            <p className="mt-6 text-purple-100/90 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
+              {talisman.effect}
+            </p>
+          )}
+        </div>
+
+        {/* 하단 네비게이션 */}
+        <div className="text-center mb-8 space-y-3">
+          <button
+            onClick={handleShare}
+            className="w-full sm:w-auto px-8 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 transition shadow-lg hover:shadow-pink-500/50"
+          >
+            📤 이 천명을 나누다 (공유)
           </button>
+          {shareMessage && <p className="text-yellow-200 text-sm font-semibold">{shareMessage}</p>}
+          <div>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full sm:w-auto px-8 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition shadow-lg hover:shadow-purple-500/50"
+            >
+              다른 영혼의 운명을 살피다
+            </button>
+          </div>
         </div>
       </div>
     </main>

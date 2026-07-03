@@ -35,23 +35,31 @@ body::before {
   box-sizing: border-box;
 }
 
-/* 별 효과 */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+/* 부적 카드 뒤집기 */
+.flip-card {
+  perspective: 1000px;
 }
 
-.star {
-  position: fixed;
-  width: 2px;
-  height: 2px;
-  background: white;
-  border-radius: 50%;
-  animation: twinkle 3s infinite;
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
 }
 
-/* 신비로운 빛 효과 */
-@keyframes mystical-glow {
-  0%, 100% { filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.3)); }
-  50% { filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6)); }
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
 }

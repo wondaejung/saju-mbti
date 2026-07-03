@@ -98,13 +98,3 @@ export const MBTI_SIPSEONG_SYNERGY: Record<string, string> = {
   I_비겁: '내향(I)과 비겁(비견/겁재) 기운이 겹치면서, 혼자만의 길을 단호하게 지켜가는 사람이 되어요! 당신의 신념은 흔들리지 않아요 💎',
   N_식신: '직관형(N)과 식신이 만나면서, 창의적 표현이 돋보여요! 당신의 아이디어는 늘 신선하고 사람들을 즐겁게 해요 ✨',
 };
-
-export const CONNECTORS = [
-  '그러면서도', '더불어', '또한', '그래서', '덕분에',
-  '이런 식으로', '이렇게 보면', '결합되면', '겹치면서', '한데',
-  '이와 더불어', '게다가', '아울러', '그렇다면', '당신은',
-];
-
-export function getRandomConnector(): string {
-  return CONNECTORS[Math.floor(Math.random() * CONNECTORS.length)];
-}
