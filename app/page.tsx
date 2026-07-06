@@ -265,13 +265,21 @@ export default function Home() {
           </div>
         </form>
 
-        {/* 궁합 보기 링크 */}
-        <Link
-          href="/compatibility"
-          className="block mt-5 py-3 rounded-2xl text-center font-bold text-pink-200 bg-gradient-to-r from-pink-900/40 to-purple-900/40 border border-pink-500/30 hover:border-pink-400/60 transition"
-        >
-          💕 인연의 궁합 보기
-        </Link>
+        {/* 다른 점술 바로가기 */}
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <Link
+            href="/compatibility"
+            className="block py-3 rounded-2xl text-center font-bold text-pink-200 bg-gradient-to-r from-pink-900/40 to-purple-900/40 border border-pink-500/30 hover:border-pink-400/60 transition"
+          >
+            💕 인연의 궁합
+          </Link>
+          <Link
+            href="/dream"
+            className="block py-3 rounded-2xl text-center font-bold text-blue-200 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-500/30 hover:border-blue-400/60 transition"
+          >
+            🌙 꿈의 해몽
+          </Link>
+        </div>
 
         {/* 하단 설명 */}
         <div className="mt-6 text-center text-sm text-purple-300/70 font-light">
